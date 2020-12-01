@@ -686,16 +686,7 @@ def register_slicewise(fname_src, fname_dest, paramreg=None, fname_mask='', warp
                    paramreg=paramreg,
                    ants_registration_params=ants_registration_params,
                    verbose=verbose,
-                   )
-
-        # ----------------------------------------------------------------------------
-        # SLR: Copy Affine matrix before it delete it in order to further measure the corrected motion
-        # ----------------------------------------------------------------------------
-        if slr_fname_source:
-            fname_source_dir, fname_source_filename, ext = sct.extract_fname(slr_fname_source)
-            for i_z in range(Image('dest.nii').dim[2]):
-                sct.copy('warp2d_'+numerotation(i_z)+'0GenericAffine.mat', fname_source_dir+'/'+fname_source_filename+'_'+'warp2d_'+numerotation(i_z)+'0GenericAffine.mat')
-        # ----------------------------------------------------------------------------
+                   slr_fname_source=slr_fname_source)  # SLR: to pass fname_source for motion correction purposes
 
     sct.printv('\nMove warping fields...', verbose)
     sct.copy(warp_forward_out, curdir)
@@ -1241,7 +1232,8 @@ def register2d(fname_src, fname_dest, fname_mask='', fname_warp='warp_forward.ni
                ants_registration_params={'rigid': '', 'affine': '', 'compositeaffine': '', 'similarity': '',
                                          'translation': '', 'bspline': ',10', 'gaussiandisplacementfield': ',3,0',
                                          'bsplinedisplacementfield': ',5,10', 'syn': ',3,0', 'bsplinesyn': ',1,3'},
-               verbose=0):
+               verbose=0,
+               slr_fname_source=None):  # SLR: to pass fname_source for motion correction purposes
     """
     Slice-by-slice registration of two images.
 
@@ -1373,6 +1365,14 @@ def register2d(fname_src, fname_dest, fname_mask='', fname_warp='warp_forward.ni
                 # Concatenating mat transfo and null 2d warping field to obtain 2d warping field of affine transformation
                 sct.run(['isct_ComposeMultiTransform', '2', file_warp2d, '-R', 'dest_Z' + num + '.nii', 'warp2d_null0Warp.nii.gz', file_mat], is_sct_binary=True)
                 sct.run(['isct_ComposeMultiTransform', '2', file_warp2d_inv, '-R', 'src_Z' + num + '.nii', 'warp2d_null0InverseWarp.nii.gz', '-i', file_mat], is_sct_binary=True)
+
+                # ----------------------------------------------------------------------------
+                # SLR: Copy Affine matrix before it delete it in order to further measure the corrected motion
+                # ----------------------------------------------------------------------------
+                if slr_fname_source:
+                    fname_source_dir, fname_source_filename, ext = sct.extract_fname(slr_fname_source)
+                    sct.copy(file_mat, fname_source_dir+'/'+fname_source_filename+'_'+file_mat)
+                # ----------------------------------------------------------------------------
 
         # if an exception occurs with ants, take the last value for the transformation
         # TODO: DO WE NEED TO DO THAT??? (julien 2016-03-01)
