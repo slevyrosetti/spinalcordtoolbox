@@ -338,6 +338,11 @@ def main(args=None):
     # [regAffine,src_regAffine.nii] -n BSpline[3]', verbose)
     # if segmentation, also do it for seg
 
+    # ---------------------------------------------------------------------------------------
+    # SLR: get initial absolute path of the destination image for motion correction purposes before the script changes it
+    # ---------------------------------------------------------------------------------------
+    slr_fname_source = os.path.abspath(fname_src)
+
     fname_src2dest, fname_dest2src, _, _ = \
         register_wrapper(fname_src, fname_dest, param, paramregmulti, fname_src_seg=fname_src_seg,
                          fname_dest_seg=fname_dest_seg, fname_src_label=fname_src_label,
@@ -345,7 +350,8 @@ def main(args=None):
                          fname_initwarpinv=fname_initwarpinv, identity=identity, interp=interp,
                          fname_output=fname_output,
                          fname_output_warp=fname_output_warp,
-                         path_out=path_out)
+                         path_out=path_out,
+                         slr_fname_source=slr_fname_source)  # SLR: pass fname_source for motion correction purposes
 
     # display elapsed time
     elapsed_time = time.time() - start_time

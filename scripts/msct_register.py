@@ -134,7 +134,7 @@ class ParamregMultiStep:
 
 def register_wrapper(fname_src, fname_dest, param, paramregmulti, fname_src_seg='', fname_dest_seg='', fname_src_label='',
                      fname_dest_label='', fname_mask='', fname_initwarp='', fname_initwarpinv='', identity=False,
-                     interp='linear', fname_output='', fname_output_warp='', path_out='', same_space=False):
+                     interp='linear', fname_output='', fname_output_warp='', path_out='', same_space=False,  slr_fname_source=None):  # SLR: for motion correction purposes
     """
     Wrapper for image registration.
 
@@ -280,7 +280,7 @@ def register_wrapper(fname_src, fname_dest, param, paramregmulti, fname_src_seg=
                     '-x', interp_step[ifile]])
                 src[ifile] = sct.add_suffix(src[ifile], '_reg')
         # register src --> dest
-        warp_forward_out, warp_inverse_out = register(src, dest, paramregmulti, param, str(i_step))
+        warp_forward_out, warp_inverse_out = register(src, dest, paramregmulti, param, str(i_step), slr_fname_source=slr_fname_source)  # SLR: to pass fname_source for motion correction purposes
         # deal with transformations with "-" as prefix. They should be inverted with calling sct_concat_transfo.
         if warp_forward_out[0] == "-":
             warp_forward_out = warp_forward_out[1:]
@@ -359,7 +359,7 @@ def register_wrapper(fname_src, fname_dest, param, paramregmulti, fname_src_seg=
 
 # register images
 # ==========================================================================================
-def register(src, dest, paramregmulti, param, i_step_str):
+def register(src, dest, paramregmulti, param, i_step_str, slr_fname_source=None):  # SLR: for motion correction purposes:
     """
     Register src onto dest image. Output affine transformations that need to be inverted will have the prefix "-".
     :param src:
@@ -532,7 +532,8 @@ def register(src, dest, paramregmulti, param, i_step_str):
                                warp_inverse_out=warp_inverse_out,
                                ants_registration_params=ants_registration_params,
                                remove_temp_files=param.remove_temp_files,
-                               verbose=param.verbose)
+                               verbose=param.verbose,
+                               slr_fname_source=slr_fname_source)  # SLR: pass fname_source for motion correction purposes
 
     # slice-wise transfo
     elif paramregmulti.steps[i_step_str].algo in ['centermass', 'centermassrot', 'columnwise']:
@@ -603,7 +604,7 @@ def register(src, dest, paramregmulti, param, i_step_str):
 
 def register_slicewise(fname_src, fname_dest, paramreg=None, fname_mask='', warp_forward_out='step0Warp.nii.gz',
                        warp_inverse_out='step0InverseWarp.nii.gz', ants_registration_params=None,
-                       path_qc='./', remove_temp_files=0, verbose=0):
+                       path_qc='./', remove_temp_files=0, verbose=0, slr_fname_source=None):  # SLR: to pass slr_fname_source for motion correction purposes
     """
     Main function that calls various methods for slicewise registration.
 
@@ -686,6 +687,15 @@ def register_slicewise(fname_src, fname_dest, paramreg=None, fname_mask='', warp
                    ants_registration_params=ants_registration_params,
                    verbose=verbose,
                    )
+
+        # ----------------------------------------------------------------------------
+        # SLR: Copy Affine matrix before it delete it in order to further measure the corrected motion
+        # ----------------------------------------------------------------------------
+        if slr_fname_source:
+            fname_source_dir, fname_source_filename, ext = sct.extract_fname(slr_fname_source)
+            for i_z in range(Image('dest.nii').dim[2]):
+                sct.copy('warp2d_'+numerotation(i_z)+'0GenericAffine.mat', fname_source_dir+'/'+fname_source_filename+'_'+'warp2d_'+numerotation(i_z)+'0GenericAffine.mat')
+        # ----------------------------------------------------------------------------
 
     sct.printv('\nMove warping fields...', verbose)
     sct.copy(warp_forward_out, curdir)
