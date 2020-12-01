@@ -2,7 +2,11 @@
 #########################################################################################
 #
 # This function test the integrity of ANTs output, given that some versions of ANTs give a wrong BSpline transform,
+<<<<<<< HEAD
 # notably when using ANTSUseLandmarkImagesToGetBSplineDisplacementField.
+=======
+# notably when using sct_ANTSUseLandmarkImagesToGetBSplineDisplacementField.
+>>>>>>> upstream/master
 #
 # ---------------------------------------------------------------------------------------
 # Copyright (c) 2014 Polytechnique Montreal <www.neuro.polymtl.ca>
@@ -12,6 +16,7 @@
 # About the license: see the file LICENSE.TXT
 #########################################################################################
 
+<<<<<<< HEAD
 
 
 import sys
@@ -27,18 +32,38 @@ import sct_utils as sct
 
 # main
 #=======================================================================================================================
+=======
+import sys
+import getopt
+import os
+
+import numpy as np
+import nibabel as nib
+
+from spinalcordtoolbox.utils.sys import init_sct, run_proc, printv
+from spinalcordtoolbox.utils.fs import tmp_create, rmtree
+
+# main
+# =======================================================================================================================
+>>>>>>> upstream/master
 def main():
 
     # Initialization
     size_data = 61
+<<<<<<< HEAD
     size_label = 1 # put zero for labels that are single points.
     dice_acceptable = 0.93 # computed DICE should be 0.931034
+=======
+    size_label = 1  # put zero for labels that are single points.
+    dice_acceptable = 0.39  # computed DICE should be 0.931034
+>>>>>>> upstream/master
     test_passed = 0
     remove_temp_files = 1
     verbose = 1
 
     # Check input parameters
     try:
+<<<<<<< HEAD
         opts, args = getopt.getopt(sys.argv[1:],'hv:')
     except getopt.GetoptError:
         usage()
@@ -53,6 +78,25 @@ def main():
     sct.run('mkdir '+ path_tmp, verbose)
 
     # go to tmp folder
+=======
+        opts, args = getopt.getopt(sys.argv[1:], 'hvr:')
+    except getopt.GetoptError:
+        usage()
+        raise SystemExit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            usage()
+            return
+        elif opt in ('-v'):
+            verbose = int(arg)
+        elif opt in ('-r'):
+            remove_temp_files = int(arg)
+
+    path_tmp = tmp_create(basename="test_ants")
+
+    # go to tmp folder
+    curdir = os.getcwd()
+>>>>>>> upstream/master
     os.chdir(path_tmp)
 
     # Initialise numpy volumes
@@ -61,6 +105,7 @@ def main():
 
     # add labels for src image (curved).
     # Labels can be big (more than single point), because when applying NN interpolation, single points might disappear
+<<<<<<< HEAD
     data_src[20-size_label:20+size_label+1, 20-size_label:20+size_label+1, 10-size_label:10+size_label+1] = 1
     data_src[30-size_label:30+size_label+1, 30-size_label:30+size_label+1, 30-size_label:30+size_label+1] = 2
     data_src[20-size_label:20+size_label+1, 20-size_label:20+size_label+1, 50-size_label:50+size_label+1] = 3
@@ -70,6 +115,17 @@ def main():
     data_dest[30-size_label:30+size_label+1, 30-size_label:30+size_label+1, 10-size_label:10+size_label+1] = 1
     data_dest[30-size_label:30+size_label+1, 30-size_label:30+size_label+1, 30-size_label:30+size_label+1] = 2
     data_dest[30-size_label:30+size_label+1, 30-size_label:30+size_label+1, 50-size_label:50+size_label+1] = 3
+=======
+    data_src[20 - size_label:20 + size_label + 1, 20 - size_label:20 + size_label + 1, 10 - size_label:10 + size_label + 1] = 1
+    data_src[30 - size_label:30 + size_label + 1, 30 - size_label:30 + size_label + 1, 30 - size_label:30 + size_label + 1] = 2
+    data_src[20 - size_label:20 + size_label + 1, 20 - size_label:20 + size_label + 1, 50 - size_label:50 + size_label + 1] = 3
+
+    # add labels for dest image (straight).
+    # Here, no need for big labels (bigger than single point) because these labels will not be re-interpolated.
+    data_dest[30 - size_label:30 + size_label + 1, 30 - size_label:30 + size_label + 1, 10 - size_label:10 + size_label + 1] = 1
+    data_dest[30 - size_label:30 + size_label + 1, 30 - size_label:30 + size_label + 1, 30 - size_label:30 + size_label + 1] = 2
+    data_dest[30 - size_label:30 + size_label + 1, 30 - size_label:30 + size_label + 1, 50 - size_label:50 + size_label + 1] = 3
+>>>>>>> upstream/master
 
     # save as nifti
     img_src = nib.Nifti1Image(data_src, np.eye(4))
@@ -79,6 +135,7 @@ def main():
 
     # Estimate rigid transformation
     printv('\nEstimate rigid transformation between paired landmarks...', verbose)
+<<<<<<< HEAD
     sct.run('ANTSUseLandmarkImagesToGetAffineTransform data_dest.nii.gz data_src.nii.gz rigid curve2straight_rigid.txt', verbose)
 
     # Apply rigid transformation
@@ -105,22 +162,73 @@ def main():
     with open ("dice.txt", "r") as file_dice:
         dice = float(file_dice.read().replace('3D Dice coefficient = ', ''))
     printv('Dice coeff = '+str(dice), verbose)
+=======
+    # TODO fixup isct_ants* parsers
+    run_proc(['isct_antsRegistration',
+              '-d', '3',
+              '-t', 'syn[1,3,1]',
+              '-m', 'MeanSquares[data_dest.nii.gz,data_src.nii.gz,1,3]',
+              '-f', '2',
+              '-s', '0',
+              '-o', '[src2reg,data_src_reg.nii.gz]',
+              '-c', '5',
+              '-v', '1',
+              '-n', 'NearestNeighbor'], verbose, is_sct_binary=True)
+
+    # # Apply rigid transformation
+    # printv('\nApply rigid transformation to curved landmarks...', verbose)
+    # run_proc('sct_apply_transfo -i data_src.nii.gz -o data_src_rigid.nii.gz -d data_dest.nii.gz -w curve2straight_rigid.txt -p nn', verbose)
+    #
+    # # Estimate b-spline transformation curve --> straight
+    # printv('\nEstimate b-spline transformation: curve --> straight...', verbose)
+    # run_proc('isct_ANTSLandmarksBSplineTransform data_dest.nii.gz data_src_rigid.nii.gz warp_curve2straight_intermediate.nii.gz 5x5x5 3 2 0', verbose)
+    #
+    # # Concatenate rigid and non-linear transformations...
+    # printv('\nConcatenate rigid and non-linear transformations...', verbose)
+    # cmd = 'isct_ComposeMultiTransform 3 warp_curve2straight.nii.gz -R data_dest.nii.gz warp_curve2straight_intermediate.nii.gz curve2straight_rigid.txt'
+    # printv('>> '+cmd, verbose)
+    # run_proc(cmd)
+    #
+    # # Apply deformation to input image
+    # printv('\nApply transformation to input image...', verbose)
+    # run_proc('sct_apply_transfo -i data_src.nii.gz -o data_src_warp.nii.gz -d data_dest.nii.gz -w warp_curve2straight.nii.gz -p nn', verbose)
+    #
+    # Compute DICE coefficient between src and dest
+    printv('\nCompute DICE coefficient...', verbose)
+    run_proc(["sct_dice_coefficient",
+              "-i", "data_dest.nii.gz",
+              "-d", "data_src_reg.nii.gz",
+              "-o", "dice.txt"], verbose)
+    with open("dice.txt", "r") as file_dice:
+        dice = float(file_dice.read().replace('3D Dice coefficient = ', ''))
+    printv('Dice coeff = ' + str(dice) + ' (should be above ' + str(dice_acceptable) + ')', verbose)
+>>>>>>> upstream/master
 
     # Check if DICE coefficient is above acceptable value
     if dice > dice_acceptable:
         test_passed = 1
 
+<<<<<<< HEAD
     # come back to parent folder
     os.chdir('..')
+=======
+    # come back
+    os.chdir(curdir)
+>>>>>>> upstream/master
 
     # Delete temporary files
     if remove_temp_files == 1:
         printv('\nDelete temporary files...', verbose)
+<<<<<<< HEAD
         sct.run('rm -rf '+ path_tmp, verbose)
+=======
+        rmtree(path_tmp)
+>>>>>>> upstream/master
 
     # output result for parent function
     if test_passed:
         printv('\nTest passed!\n', verbose)
+<<<<<<< HEAD
         sys.exit(0)
     else:
         printv('\nTest failed!\n', verbose)
@@ -167,3 +275,38 @@ if __name__ == "__main__":
     # call main function
     main()
 
+=======
+    else:
+        printv('\nTest failed!\n', verbose)
+        raise SystemExit(1)
+
+
+# printv(usage)
+# ==========================================================================================
+def usage():
+    print('\n'
+          '' + os.path.basename(__file__) + '\n'
+          '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+          'Part of the Spinal Cord Toolbox <https://sourceforge.net/projects/spinalcordtoolbox>\n'
+          '\n'
+          'DESCRIPTION\n'
+          '  This function test the integrity of ANTs output, given that some versions of ANTs give a wrong BSpline '
+          '  transform notably when using sct_ANTSUseLandmarkImagesToGetBSplineDisplacementField..\n'
+          '\n'
+          'USAGE\n'
+          '  ' + os.path.basename(__file__) + '\n'
+          '\n'
+          'OPTIONAL ARGUMENTS\n'
+          '  -h                         show this help\n'
+          '  -r {0, 1}                  remove temp files. Default=1\n'
+          '  -v {0, 1}                  verbose. Default=1\n'
+          '\n')
+
+
+# Start program
+# =======================================================================================================================
+if __name__ == "__main__":
+    init_sct()
+    # call main function
+    main()
+>>>>>>> upstream/master

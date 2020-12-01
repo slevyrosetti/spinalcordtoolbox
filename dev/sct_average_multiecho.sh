@@ -17,7 +17,11 @@ function askhelp() {
     echo help!
 }
 
+<<<<<<< HEAD
 if [ ! ${#@} -gt 0 ]; then
+=======
+if [[ ! ${#@} -gt 0 ]]; then
+>>>>>>> upstream/master
     usage `basename ${0}`
     exit 1
 fi
@@ -32,7 +36,11 @@ path_data=$1
 subfolder=`ls ${path_data}`
 
 # check if temp folder exist
+<<<<<<< HEAD
 if [ -e "tmp.data" ]; then
+=======
+if [[ -e "tmp.data" ]]; then
+>>>>>>> upstream/master
   cmd='rm -rf tmp.data'
   echo ">> $cmd"; $cmd
 fi

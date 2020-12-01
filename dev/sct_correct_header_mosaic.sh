@@ -35,7 +35,11 @@ folder_tmp="tmp.correctheader"
 echo
 echo "create temp folder..."
 # check if temp folder exist - if so, delete it
+<<<<<<< HEAD
 if [ -e $folder_tmp ]; then
+=======
+if [[ -e $folder_tmp ]]; then
+>>>>>>> upstream/master
   cmd="rm -rf $folder_tmp"
   echo ">> $cmd"; $cmd
 fi
@@ -45,7 +49,11 @@ echo ">> $cmd"; $cmd
 # split data along t (4D --> 3D)
 echo
 echo "split data along t (4D --> 3D)..."
+<<<<<<< HEAD
 cmd="fslsplit $file_in ${folder_tmp}/dmri_splitT -t"
+=======
+cmd="fslsplit $file_in $folder_tmp/dmri_splitT -t"
+>>>>>>> upstream/master
 echo ">> $cmd"; $cmd;
 
 # go to temp folder
@@ -56,7 +64,11 @@ echo
 echo "change orientation to RPS for each file..."
 FILES=`ls dmri_splitT*.*`
 for file in $FILES; do
+<<<<<<< HEAD
   cmd="sct_orientation -i $file -o rps_${file} -orientation RPS"
+=======
+  cmd="sct_orientation -i $file -o rps_$file -orientation RPS"
+>>>>>>> upstream/master
   echo ">> $cmd"; $cmd;
 done
 
@@ -80,7 +92,11 @@ done
 
 echo
 echo "merge back into 4D file..."
+<<<<<<< HEAD
 cmd="fslmerge -t ../correct_${file_in} correct_*.*"
+=======
+cmd="fslmerge -t ../correct_$file_in correct_*.*"
+>>>>>>> upstream/master
 echo ">> $cmd"; $cmd;
 
 
@@ -96,5 +112,9 @@ echo ">> $cmd"; $cmd
 # display useful stuff
 echo
 echo "Done! Created file:"
+<<<<<<< HEAD
 echo "--> correct_${file_in}"
+=======
+echo "--> correct_$file_in"
+>>>>>>> upstream/master
 echo
