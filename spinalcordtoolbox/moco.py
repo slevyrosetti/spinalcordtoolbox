@@ -29,11 +29,11 @@ from spinalcordtoolbox.utils.shell import display_viewer_syntax, get_interpolati
 from spinalcordtoolbox.utils.sys import sct_progress_bar, run_proc, printv
 from spinalcordtoolbox.utils.fs import tmp_create, extract_fname, rmtree, copy
 
-# FIXME: don't import from scripts!
-import sct_dmri_separate_b0_and_dwi
-from sct_convert import convert
-from sct_image import split_data, concat_data, multicomponent_split
-import sct_apply_transfo
+# FIXME don't import from scripts in API
+from spinalcordtoolbox.scripts import sct_dmri_separate_b0_and_dwi
+from spinalcordtoolbox.scripts.sct_convert import convert
+from spinalcordtoolbox.scripts.sct_image import split_data, concat_data, multicomponent_split
+from spinalcordtoolbox.scripts import sct_apply_transfo
 
 
 class ParamMoco:
@@ -287,9 +287,10 @@ def moco_wrapper(param):
     # Merge across groups
     printv('\nMerge across groups...', param.verbose)
     # file_dwi_groups_means_merge = 'dwi_averaged_groups'
-    im_dw_list = []
+    fname_dw_list = []
     for iGroup in range(nb_groups):
-        im_dw_list.append(list_file_group[iGroup])
+        fname_dw_list.append(list_file_group[iGroup])
+    im_dw_list = [Image(fname) for fname in fname_dw_list]
     concat_data(im_dw_list, 3).save(file_datasubgroup, verbose=0)
 
     # Cleanup
@@ -385,7 +386,7 @@ def moco_wrapper(param):
         if not param.fname_bvals == '':
             # if bvals file is provided
             args += ['-bval', param.fname_bvals]
-        fname_b0, fname_b0_mean, fname_dwi, fname_dwi_mean = sct_dmri_separate_b0_and_dwi.main(args=args)
+        fname_b0, fname_b0_mean, fname_dwi, fname_dwi_mean = sct_dmri_separate_b0_and_dwi.main(argv=args)
     else:
         fname_moco_mean = add_suffix(im_moco.absolutepath, '_mean')
         im_moco.mean(dim=3).save(fname_moco_mean)
@@ -423,14 +424,17 @@ def moco_wrapper(param):
                 moco_param.append([np.mean(np.ravel(im_warp_XYZ[0].data)), np.mean(np.ravel(im_warp_XYZ[1].data))])
 
             # These two lines allow to generate one file instead of two, containing X, Y and Z moco parameters
-            #im_warp_concat = concat_data(files_warp, dim=3)
+            # im_warp = [Image(fname) for fname in files_warp]
+            # im_warp_concat = concat_data(im_warp, dim=3)
             # im_warp_concat.save('fmri_moco_params.nii')
 
             # Concatenating the moco parameters into a time series for X and Y components.
-            im_warp_concat = concat_data(files_warp_X, dim=3)
+            im_warp_X = [Image(fname) for fname in files_warp_X]
+            im_warp_concat = concat_data(im_warp_X, dim=3)
             im_warp_concat.save(file_moco_params_x)
 
-            im_warp_concat = concat_data(files_warp_Y, dim=3)
+            im_warp_Y = [Image(fname) for fname in files_warp_Y]
+            im_warp_concat = concat_data(im_warp_Y, dim=3)
             im_warp_concat.save(file_moco_params_y)
 
             # Writing a TSV file with the slicewise average estimate of the moco parameters. Useful for QC
@@ -638,7 +642,7 @@ def moco(param):
                 # copy transformation
                 copy(file_mat[iz][gT[index_good]] + 'Warp.nii.gz', file_mat[iz][fT[it]] + 'Warp.nii.gz')
                 # apply transformation
-                sct_apply_transfo.main(args=['-i', file_data_splitZ_splitT[fT[it]],
+                sct_apply_transfo.main(argv=['-i', file_data_splitZ_splitT[fT[it]],
                                              '-d', file_target,
                                              '-w', file_mat[iz][fT[it]] + 'Warp.nii.gz',
                                              '-o', file_data_splitZ_splitT_moco[fT[it]],
@@ -651,14 +655,16 @@ def moco(param):
         # Merge data along T
         file_data_splitZ_moco.append(add_suffix(file, suffix))
         if todo != 'estimate':
-            im_out = concat_data(file_data_splitZ_splitT_moco, 3)
+            im_data_splitZ_splitT_moco = [Image(fname) for fname in file_data_splitZ_splitT_moco]
+            im_out = concat_data(im_data_splitZ_splitT_moco, 3)
             im_out.absolutepath = file_data_splitZ_moco[iz]
             im_out.save(verbose=0)
 
     # If sagittal, merge along Z
     if param.is_sagittal:
         # TODO: im_out.dim is incorrect: Z value is one
-        im_out = concat_data(file_data_splitZ_moco, 2)
+        im_data_splitZ_moco = [Image(fname) for fname in file_data_splitZ_moco]
+        im_out = concat_data(im_data_splitZ_moco, 2)
         dirname, basename, ext = extract_fname(file_data)
         path_out = os.path.join(dirname, basename + suffix + ext)
         im_out.absolutepath = path_out
@@ -758,7 +764,7 @@ def register(param, file_src, file_dest, file_mat, file_out, im_mask=None):
             status, output = run_proc(cmd, verbose=1 if param.verbose == 2 else 0, env=env, **kw)
 
     elif param.todo == 'apply':
-        sct_apply_transfo.main(args=['-i', file_src,
+        sct_apply_transfo.main(argv=['-i', file_src,
                                      '-d', file_dest,
                                      '-w', file_mat + param.suffix_mat,
                                      '-o', file_out_concat,
